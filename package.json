@@ -1,0 +1,38 @@
+{
+  "name": "markdown-select",
+  "displayName": "markdown-select",
+  "description": "Enhance selection in Markdown documents",
+  "version": "1.0.0",
+  "publisher": "inkytonik",
+  "engines": {
+    "vscode": "^1.47.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "activationEvents": [
+    "onLanguage:markdown"
+  ],
+  "main": "./out/extension",
+  "contributes": {},
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "tsc -p ./",
+    "lint": "tslint -c tslint.json 'src/**/*.ts'",
+    "watch": "tsc -watch -p ./",
+    "pretest": "npm run compile && npm run lint",
+    "test": "node ./out/test/runTest.js"
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "@types/glob": "^7.1.3",
+    "@types/mocha": "^5.2.6",
+    "@types/node": "^12.12.0",
+    "@types/vscode": "^1.47.0",
+    "glob": "^7.1.4",
+    "mocha": "^6.1.4",
+    "tslint": "^5.8.0",
+    "typescript": "^3.9.4",
+    "vscode-test": "^1.3.0"
+  }
+}

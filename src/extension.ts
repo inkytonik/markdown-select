@@ -1,0 +1,135 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at https://mozilla.org/MPL/2.0/.
+
+'use strict';
+
+import {
+  ExtensionContext,
+  languages,
+  Position,
+  SelectionRange,
+  SelectionRangeProvider,
+  TextDocument,
+  Range,
+} from 'vscode';
+
+type Predicate = (text: TextDocument, line: number) => boolean;
+
+export const lineIsBlank: Predicate = (document: TextDocument, line: number) => {
+  return document.lineAt(line).isEmptyOrWhitespace;
+};
+
+export const lineIsHeading: Predicate = (document: TextDocument, line: number) => {
+  return document.lineAt(line).text.startsWith('#');
+};
+
+export function levelOf(document: TextDocument, line: number): number {
+  const prefix = /^#+/.exec(document.lineAt(line).text);
+  return prefix ? prefix[0].length : 1000;
+}
+
+export function lineIsHeadingAtLevelOrHigher(level: number): Predicate {
+  return (document: TextDocument, line: number) => {
+    return levelOf(document, line) <= level;
+  };
+}
+
+export function lineBeforeUntil(
+  document: TextDocument,
+  line: number,
+  pred: Predicate
+): number {
+  let lineBefore = line;
+  while (lineBefore >= 0 && !pred(document, lineBefore)) {
+    lineBefore--;
+  }
+  return lineBefore;
+}
+
+export function lineAfterUntil(
+  document: TextDocument,
+  line: number,
+  pred: Predicate
+): number {
+  const lastLine = document.lineCount - 1;
+  let lineAfter = line;
+  while (lineAfter < lastLine && !pred(document, lineAfter)) {
+    lineAfter++;
+  }
+  return lineAfter;
+}
+
+export function lineRange(
+  startLine: number,
+  endLine: number,
+  parent?: SelectionRange
+): SelectionRange {
+  return new SelectionRange(new Range(startLine, 0, endLine, 0), parent);
+}
+
+export function paragraphRange(
+  document: TextDocument,
+  position: Position,
+  parent?: SelectionRange
+): SelectionRange {
+  const startLine = lineBeforeUntil(document, position.line, lineIsBlank);
+  const endLine = lineAfterUntil(document, position.line, lineIsBlank);
+  return lineRange(startLine, endLine, parent);
+}
+
+function enclosingRange(document: TextDocument, line: number, level: number): SelectionRange | undefined {
+  if (level <= 0) {
+    return undefined;
+  } else {
+    const startLine = lineBeforeUntil(document, line, lineIsHeadingAtLevelOrHigher(level));
+    const endLine = lineAfterUntil(document, line + 1, lineIsHeadingAtLevelOrHigher(level));
+    return sectionLineRange(document, startLine, endLine, level);
+  }
+}
+
+function sectionLineRange(document: TextDocument, startLine: number, endLine: number, level: number): SelectionRange {
+  if (startLine === 0) {
+    return lineRange(0, endLine);
+  } else {
+    const parent = enclosingRange(document, startLine - 1, level - 1);
+    const finishLine = endLine === document.lineCount - 1 ? endLine : endLine - 1;
+    return lineRange(startLine - 1, finishLine, parent);
+  }
+}
+
+export function sectionRange(document: TextDocument, line: number): SelectionRange {
+  const startLine = lineBeforeUntil(document, line, lineIsHeading);
+  const startLevel = levelOf(document, startLine);
+  const endLine = lineAfterUntil(document, line + 1, lineIsHeadingAtLevelOrHigher(startLevel));
+  return sectionLineRange(document, startLine, endLine, startLevel);
+}
+
+const selectionRangeProvider: SelectionRangeProvider = {
+  async provideSelectionRanges(
+    document,
+    positions,
+    token
+  ): Promise<SelectionRange[]> {
+    const result: SelectionRange[] = [];
+    for (const position of positions) {
+      console.log("line: " + position.line);
+      const section = sectionRange(document, position.line);
+      const paragraph = paragraphRange(document, position, section);
+      if (paragraph.range.isEmpty) {
+        result.push(section);
+      } else {
+        result.push(paragraph);
+      }
+    }
+    return result;
+  },
+};
+
+export function activate(context: ExtensionContext) {
+  const selectionRangeProviderDisposable = languages.registerSelectionRangeProvider(
+    'markdown',
+    selectionRangeProvider
+  );
+  context.subscriptions.push(selectionRangeProviderDisposable);
+}
