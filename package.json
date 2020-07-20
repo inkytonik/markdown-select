@@ -4,6 +4,7 @@
   "description": "Enhance selection in Markdown documents",
   "version": "1.0.0",
   "publisher": "inkytonik",
+  "repository": "https://github.com/inkytonik/markdown-select",
   "engines": {
     "vscode": "^1.47.0"
   },
