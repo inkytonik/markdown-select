@@ -2,6 +2,8 @@
 
 VSCode extension to enhance selection in Markdown documents.
 
+NOTE: As of the October 2020 version of VSCode (1.51) there is built-in support for [Markdown smart select](https://code.visualstudio.com/updates/v1_51#_markdown-smart-select), so this extension is not needed anymore.
+
 Adds a selection provider that reports:
 
 - paragraph selections (delimited by blank lines) and
