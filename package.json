@@ -2,7 +2,7 @@
   "name": "markdown-select",
   "displayName": "markdown-select",
   "description": "Enhance selection in Markdown documents",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "publisher": "inkytonik",
   "repository": "https://github.com/inkytonik/markdown-select",
   "engines": {
